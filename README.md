@@ -86,3 +86,36 @@ Proof of the "Living Schema." When the engine ingested an unmapped "South" buyer
 1. Identified a **Fractal Saturation** breach via Mahalanobis distance.
 2. Utilized an **Elastic Buffer** to confirm the semantic trend.
 3. Triggered an **Autonomous Bifurcation** to grow a new fractal branch in real-time, effectively eliminating manual schema migrations and data downtime.
+
+## Installation & Usage
+If you wish to verify my results on your own do the following:
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/Apacher122/Fractal-Semantic-Encoding.git
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run
+```bash
+# Full benchmark
+python benchmark.py
+
+# Level 1 Proof of Concept
+python poc_level1.py
+
+# Level 2 Proof of Concept
+python poc_level2.py
+```
+
+## Additional Documentation
+
+For a deep dive into the mathematical foundations, system lifecycles, and EQP logic, please visit the Project Wiki to read the full whitepaper:
+*Fractal Semantic Encoding (FSE): A Framework for Efficient Adaptive Data Architecture*
+
+---
+**Author:** Rey Christopher D. Aparece
