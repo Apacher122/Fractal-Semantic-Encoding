@@ -47,7 +47,7 @@ Biological brains don't log raw data rows; they filter noise and map inputs into
 
 ## The Core of FSE
 
-As mentioned above, traditional databases are "passive" in that they store what you give them. They won't index by themselves. They wait for manual indexing. FSE is "active," meaning that they map the data's inherent meaning upon ingestion.
+As mentioned above, traditional databases are "passive" in that they store what you give them. They won't index by themselves. They wait for manual indexing. FSE is an "active hybrid" in that it combines rigid architectural boundaries with dynamic biological mapping. It maps the data's inherent meaning upon ingestion through these three tiers: 
 
 * **Tier 1: Deterministic Walls** - Enforces structural integrity and eliminates **Cluster Bleed**.
 
