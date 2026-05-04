@@ -54,3 +54,16 @@ As mentioned above, traditional databases are "passive" in that they store what 
 * **Tier 2: Fractal Branching** - Uses **Exact Bounding Matrices** (*B[min]*, *B[max]*) to achieve index-free pruning
 
 * **Tier 3: Delta Encoding** - Stores records as high-density delta vectors to massively reduce storage without syntactic compression like Gzip.
+
+## Performance Benchmarks
+
+*I've included all the files in this repo for you to reproduce these results yourself.*
+
+Results base on a synthetic dataset of 500,000 records comparing FSE against industry-standard formats.
+
+### Storage Footprint
+| Architecture | Storage Method | Disk Footprint | Efficiency |
+| :--- | :--- | :--- | :--- |
+| **SQLite** | Raw B-Tree | 12.80 MB | Baseline |
+| **Parquet** | Snappy Columnar | 8.27 MB | 35.4% Reduction |
+| **FSE** | **Semantic Binary** | **3.34 MB** | **73.9% Reduction** |
