@@ -40,7 +40,7 @@ Biological brains don't log raw data rows; they filter noise and map inputs into
 
 * **Benoit B. MandelBrot: *The Fractal Geometry of Nature* (1983)** - The proverbeal "Aha!" moment. Mandelbrot proved that you can represent infinitely complex structure with simple, repeating boundaries. This became the mathematical foundation for **Tier 2 (Fractal Branching)** and index-pruining.
 
-* **Michael F. Barnsley & Alan D. Sloan: *A Better Way to Compress Images* (1988)** - in the 80s, these guys figured out how to compress images by storing mathematical transforms instead of individual pixels. This exact principle is what I used to reduce the database storage by **74.3%** in **Tier 3**.
+* **Michael F. Barnsley & Alan D. Sloan: *A Better Way to Compress Images* (1988)** - in the 80s, these guys figured out how to compress images by storing mathematical transforms instead of individual pixels. This exact principle is what I used to reduce the database storage by **73.9%** in **Tier 3**.
 
 * **Stéphane Mallat: *A Wavelet Tour of Signal Processing* (1999)** - The influence behind how FSE handles "structural drift." Mallet's work on wave anomalies was the design principle for the system that catches outliers and routes them to an **Elastic Buffer** before they can pollute existing data clusters.
 </details>
@@ -67,3 +67,22 @@ Results base on a synthetic dataset of 500,000 records comparing FSE against ind
 | **SQLite** | Raw B-Tree | 12.80 MB | Baseline |
 | **Parquet** | Snappy Columnar | 8.27 MB | 35.4% Reduction |
 | **FSE** | **Semantic Binary** | **3.34 MB** | **73.9% Reduction** |
+
+### Query Pruning (Rows Touched)
+| Query | Logic | Pruning Rate |
+| :--- | :--- | :--- |
+| **Q1: Exact Filter** | `region == 2 & age > 40` | **66.7%** |
+| **Q2: Boundary Scan** | `145 <= spend <= 160` | **33.3%** |
+| **Q3: Local Max** | `max(spend) where region == 3` | **66.7%** |
+
+## Proof of Concept (PoC) Walkthrough
+
+### Level 1: Deterministic Accuracy
+Demonstrates that the hybrid engine achieves **Exact Query Processsing (EQP)**.
+In a 12-record test, the engine mathematically proved data absence in irrelevant branches, bypassing useless data to calculate the exact mean while only touching **8 of 12 rows**
+
+### Level 2: Adaptive Evolution
+Proof of the "Living Schema." When the engine ingested an unmapped "South" buyer demographic, it:
+1. Identified a **Fractal Saturation** breach via Mahalanobis distance.
+2. Utilized an **Elastic Buffer** to confirm the semantic trend.
+3. Triggered an **Autonomous Bifurcation** to grow a new fractal branch in real-time, effectively eliminating manual schema migrations and data downtime.
