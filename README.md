@@ -44,3 +44,13 @@ Biological brains don't log raw data rows; they filter noise and map inputs into
 
 * **Stéphane Mallat: *A Wavelet Tour of Signal Processing* (1999)** - The influence behind how FSE handles "structural drift." Mallet's work on wave anomalies was the design principle for the system that catches outliers and routes them to an **Elastic Buffer** before they can pollute existing data clusters.
 </details>
+
+## The Core of FSE
+
+As mentioned above, traditional databases are "passive" in that they store what you give them. They won't index by themselves. They wait for manual indexing. FSE is "active," meaning that they map the data's inherent meaning upon ingestion.
+
+* **Tier 1: Deterministic Walls** - Enforces structural integrity and eliminates **Cluster Bleed**.
+
+* **Tier 2: Fractal Branching** - Uses **Exact Bounding Matrices** (*B[min]*, *B[max]*) to achieve index-free pruning
+
+* **Tier 3: Delta Encoding** - Stores records as high-density delta vectors to massively reduce storage without syntactic compression like Gzip.
