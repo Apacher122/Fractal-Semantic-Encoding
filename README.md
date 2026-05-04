@@ -27,6 +27,20 @@ Biological brains don't log raw data rows; they filter noise and map inputs into
 ### **1. Identifying the Structural Rot**
 *Before I could even build a solution, I had to quantify exactly why modern data infrastructure is failing. I spent some weeks dissecting the failure points of modern data infrastructure. I went over various sources, but I ultimately landed on these to build the framework for the "problem space" FSE is designed to solve:*
 
-* **Zhamak Dehghani: Data Mesh (2022)** - This was my primary source for **Tier 1 (Deterministic Walls).** Dehghani proved that centralized data lakes are a bottlebeck; data needs to be categorized locally to avoid **architectural bloat.**
+* **Zhamak Dehghani: *Data Mesh* (2022)** - This was my primary source for **Tier 1 (Deterministic Walls).** Dehghani proved that centralized data lakes are a bottlebeck; data needs to be categorized locally to avoid **architectural bloat.**
 
+* **Chad Sanderson: *The Rise of Data Contracts* (2022)** - Sanderson's work on schema drift confirmed my suspicion that manual schema updates are a losing battle against **structural entropy.**\
+
+* **Ian Barr: *Breaking Down Data Silos at Airbnb* (2021)** - A masterclass in the "Macro-Infrastructure" problem. Barr's analysis of Airbnb's data footprint shows the massive compuational waste of **"Cluster Bleed"**, which I set out to eliminate mathematically.
+
+* **Joseph M. Hellerstein: *Quantitative Data Cleaning for Large Databases* (2008)** - The economic argument for FSE. Hellersetin proved that if a database doesn't understand the semantics of its data at the storage layer, you pay for it in exponential **computational overhead** later.
+
+### **2. Rebuilding the Foundation (Biomimecry)**
+*At this point, constraints have been defined. I realized the answers weren't in traditional database whitepapers. I looked into how nature and early signal processing handled high-density info. These sources provided the mathematical foundation I used to build the FSE engine:
+
+* **Benoit B. MandelBrot: *The Fractal Geometry of Nature* (1983)** - The proverbeal "Aha!" moment. Mandelbrot proved that you can represent infinitely complex structure with simple, repeating boundaries. This became the mathematical foundation for **Tier 2 (Fractal Branching)** and index-pruining.
+
+* **Michael F. Barnsley & Alan D. Sloan: *A Better Way to Compress Images* (1988)** - in the 80s, these guys figured out how to compress images by storing mathematical transforms instead of individual pixels. This exact principle is what I used to reduce the database storage by **74.3%** in **Tier 3**.
+
+* **Stéphane Mallat: *A Wavelet Tour of Signal Processing* (1999)** - The influence behind how FSE handles "structural drift." Mallet's work on wave anomalies was the design principle for the system that catches outliers and routes them to an **Elastic Buffer** before they can pollute existing data clusters.
 </details>
