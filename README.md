@@ -36,7 +36,7 @@ Biological brains don't log raw data rows; they filter noise and map inputs into
 * **Joseph M. Hellerstein: *Quantitative Data Cleaning for Large Databases* (2008)** - The economic argument for FSE. Hellersetin proved that if a database doesn't understand the semantics of its data at the storage layer, you pay for it in exponential **computational overhead** later.
 
 ### **2. Rebuilding the Foundation (Biomimecry)**
-*At this point, constraints have been defined. I realized the answers weren't in traditional database whitepapers. I looked into how nature and early signal processing handled high-density info. These sources provided the mathematical foundation I used to build the FSE engine:
+*At this point, constraints have been defined. I realized the answers weren't in traditional database whitepapers. I looked into how nature and early signal processing handled high-density info. These sources provided the mathematical foundation I used to build the FSE engine:*
 
 * **Benoit B. MandelBrot: *The Fractal Geometry of Nature* (1983)** - The proverbeal "Aha!" moment. Mandelbrot proved that you can represent infinitely complex structure with simple, repeating boundaries. This became the mathematical foundation for **Tier 2 (Fractal Branching)** and index-pruining.
 
