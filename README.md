@@ -115,7 +115,7 @@ python poc_level2.py
 ## Additional Documentation
 
 For a deep dive into the mathematical foundations, system lifecycles, and EQP logic, please visit the Project Wiki to read the full whitepaper:
-*Fractal Semantic Encoding (FSE): A Framework for Efficient Adaptive Data Architecture*
+*[Fractal Semantic Encoding (FSE): A Framework for Efficient Adaptive Data Architecture](https://github.com/Apacher122/Fractal-Semantic-Encoding/wiki)*
 
 ---
 **Author:** Rey Christopher D. Aparece
