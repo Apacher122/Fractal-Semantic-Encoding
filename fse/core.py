@@ -13,7 +13,7 @@ class FSECore:
     
     FSE removes the need for a traditional secondary index. Combining absolute categorical state
     isolation (Tier 1) with autonomous multi-dimensional bounding matrices (Tier 2), the FSE engine
-    natively bypasses millions of floating-point operations, and anchieves index-level search
+    natively bypasses millions of floating-point operations, and achieves index-level search
     speeds with zero storage bloat and zero mathematical degradation.
     """
     def __init__(self, partition_col=0, n_sub_clusters=2):
