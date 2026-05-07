@@ -7,6 +7,26 @@ Tier 2: Semantic Clustering (Exact Bounding Boxes)
 import numpy as np
 from sklearn.cluster import KMeans
 
+class SemanticPattern:
+    """
+    Python representation of a Semantic Pattern (P[k]) within the FSE hierarchy.
+    
+    A Semantic Pattern is a decoupling of statistical identities of data from their physical extent.
+    It serves as the fundamental node within the Tier 2 Fractal Branch.
+
+
+    Attributes:
+        partition_key (int/float/str): The categorical identifier of a pattern.
+        semantic_centroid (np.ndarray): The d-dimensional mean vector (mu[k]) aka the prototype.
+        exact_bounding_region (dict): The axis-aligned hyper-rectangle (B[k]) defining the absolute
+            support of the partition.
+        delta_vectors (list of np.ndarray): Compressed Tier 3 residual vectors (delta[k]). Stored
+            relative to the semantic centroid.
+        elastic_buffer (list): Transient storage (E[k]) for out-of-bound records pending Autonomous
+            Bifurcation.
+    """
+    
+
 class FSECore:
     """
     Exact Query (EQP) Core Engine
