@@ -24,9 +24,19 @@ import pandas as pd
 from fse.core import FSECore
 from helpers.outputs import print_step, print_section, print_benchmark_report
 
-# ==============================================================================
-# 1: Synthetic Data Generator
-# ==============================================================================
+def calculate_pruning_rate(total_records, rows_touched):
+    """
+    Calculates the percentage of the dataset that was bypassed.
+    This metric provides proof for Theorem 4.
+
+    Args:
+        total_records (int): The total baseline cardinality of the dataset.
+        rows_touched (int): The number of Tier 3 Delta Vectors reconstructed during query execution.
+    
+    Returns:
+        float: The percentage of the dataset that was bypassed (0.0 to 100.0).
+    """
+    return ((total_records - rows_touched ) / total_records) * 100
 def generate_synth_data(n_records=100000):
     """
     Generates a synthetic dataset of demographic records grouped into three distinct semantic
@@ -146,11 +156,11 @@ def init_fse(data):
     total_bytes = 0
     for _, branches in db.partitions.items():
         for branch in branches:
-            total_bytes += branch['centroid'].nbytes
-            total_bytes += branch['min_bounds'].nbytes
-            total_bytes += branch['max_bounds'].nbytes
-            total_bytes += len(branch['deltas']) * 1
-            total_bytes += len(branch['deltas']) * 3 * 2
+            total_bytes += branch.semantic_centroid.nbytes
+            total_bytes += branch.exact_bounding_region['min_bounds'].nbytes
+            total_bytes += branch.exact_bounding_region['max_bounds'].nbytes
+            total_bytes += len(branch.delta_vectors) * 1
+            total_bytes += len(branch.delta_vectors) * 3 * 2
 
     with open(fse_file, 'wb') as f:
         f.write(os.urandom(int(total_bytes)))
@@ -180,7 +190,7 @@ if __name__ == "__main__":
             "sql": "SELECT AVG(spend) FROM sales WHERE region = 2 AND age > 40",
             "pd": lambda df: df.loc[(df['region'] == 2) & (df['age'] > 40), 'spend'].mean(),
             "partition_filter": lambda p_val: p_val == 2, 
-            "fse_branch": lambda b: b['max_bounds'][1] > 40,
+            "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][1] > 40,
             "fse_leaf": lambda r: r[1] > 40,
             "fse_agg": np.mean
         },
@@ -189,7 +199,7 @@ if __name__ == "__main__":
             "sql": "SELECT COUNT(*) FROM sales WHERE spend BETWEEN 145 AND 160",
             "pd": lambda df: len(df.loc[(df['spend'] >= 145) & (df['spend'] <= 160)]),
             "partition_filter": lambda p_val: True,
-            "fse_branch": lambda b: b['max_bounds'][2] >= 145 and b['min_bounds'][2] <= 160,
+            "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][2] >= 145 and b.exact_bounding_region['min_bounds'][2] <= 160,
             "fse_leaf": lambda r: 145 <= r[2] <= 160,
             "fse_agg": len
         },
@@ -207,7 +217,7 @@ if __name__ == "__main__":
             "sql": "SELECT SUM(spend) FROM sales WHERE age > 10",
             "pd": lambda df: df.loc[df['age'] > 10, 'spend'].sum(),
             "partition_filter": lambda p_val: True,
-            "fse_branch": lambda b: b['max_bounds'][1] > 10,
+            "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][1] > 10,
             "fse_leaf": lambda r: r[1] > 10,
             "fse_agg": np.sum
         }
