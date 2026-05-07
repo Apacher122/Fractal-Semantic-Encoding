@@ -1,17 +1,17 @@
 """
-FSE vs SQLite Benchmarking Suite
+FSE vs SQLite vs Parquet Benchmarking Suite
 
 This script provides an empirical performance comparison between standard B-tree relational
-databases (in this case, SQLite) and the Fractal Semantic Encoding (FSE) engine.
+databases (SQLite), columnar storage (Apache Parquet), and the Fractal Semantic Encoding (FSE) engine.
 
-Since comparing Python's execution speed to a highly optimized C-based database engine is 
+Since comparing Python's execution speed to highly optimized C-based engines is 
 inherently flawed, the focus of this benchmark is strictly on algorithmic superiority and resource
 utilization by measuring the following key metrics:
 1. Storage Footprint: Disk size of SQLite (.db) vs. Parquet (.parquet) vs. FSE (.fse).
-    NOTE: FSE's footprint is calculated by writing the mathematically compressed delta arrays to a
-    raw binary .fse file to provide the physical reality of the compressed delta.
-2. Algorithmic Efficiency: Total rows sequentially scanned (SQLite) vs. Rows touched after
-    hierarchical pruning (FSE).
+   NOTE: FSE's footprint is calculated by writing the mathematically compressed delta arrays to a
+   raw binary .fse file to provide the physical reality of the compressed delta.
+2. Algorithmic Efficiency: Total rows sequentially scanned (SQLite) vs. 1D Zone Map Pruning
+   (Parquet) vs. Multi-Dimensional Hierarchical Pruning (FSE).
 
 Usage:
     py benchmark.py
@@ -21,6 +21,7 @@ import numpy as np
 import sqlite3
 import os
 import pandas as pd
+import pyarrow.parquet as pq
 from fse.core import FSECore
 from helpers.outputs import print_step, print_section, print_benchmark_report
 
@@ -28,27 +29,13 @@ def calculate_pruning_rate(total_records, rows_touched):
     """
     Calculates the percentage of the dataset that was bypassed.
     This metric provides proof for Theorem 4.
-
-    Args:
-        total_records (int): The total baseline cardinality of the dataset.
-        rows_touched (int): The number of Tier 3 Delta Vectors reconstructed during query execution.
-    
-    Returns:
-        float: The percentage of the dataset that was bypassed (0.0 to 100.0).
     """
     return ((total_records - rows_touched ) / total_records) * 100
-def generate_synth_data(n_records=100000):
+
+def generate_synth_data(n_records=500000):
     """
     Generates a synthetic dataset of demographic records grouped into three distinct semantic
     clusters (East, West, North) to simulate data that contains inherent structural meaning.
-
-    Args:
-        n_records (int, optional): The total number of synthetic records to generate.
-            Defaults to 100000.
-    
-    Returns:
-        np.ndarray: A 2D numpy array of shape (n_records, 3). The three columns represent
-            [Region, Age, Spend] respectively.
     """
     print_step("Setup", f"Generating {n_records:,} synthetic records...")
 
@@ -62,7 +49,7 @@ def generate_synth_data(n_records=100000):
         rng.normal(158, 20, n_records // 3)
     ))
 
-    #Cluster 1: West (Region 2, Avg. Age 46, Avg. Spend 168)
+    # Cluster 1: West (Region 2, Avg. Age 46, Avg. Spend 168)
     west = np.column_stack((
         np.full(n_records // 3, 2),
         rng.normal(46, 5, n_records // 3),
@@ -76,7 +63,7 @@ def generate_synth_data(n_records=100000):
         rng.normal(123, 15, n_records // 3)
     ))
 
-    # Combine and shuffle
+    # Combine and shuffle to simulate real-world chronological insertion
     synth_data = np.vstack((east, west, north))
     rng.shuffle(synth_data)
 
@@ -88,19 +75,7 @@ def generate_synth_data(n_records=100000):
 # 2: DB initializations
 # ==============================================================================
 def init_sqlite(data):
-    """
-    Initializes a standard SQLite database
-
-    Args:
-        data (np.ndarray): Dataset to ingest
-
-    Returns:
-        tuple: A 3-element tuple containing:
-            - conn (sqlite3.Connection): Active database connection.
-            - cursor (sqlite3.Cursor): Cursor for executing queries.
-            - file_size (int): Physical byte size of the .db file on disk.
-    """
-
+    """Initializes a standard SQLite database."""
     db_file = "benchmark.db"
     if os.path.exists(db_file):
         os.remove(db_file)
@@ -124,16 +99,7 @@ def init_sqlite(data):
 
 def init_pandas(data):
     """
-    Initializes a Pandas dataframe and exports it to Parquet to simulate a columnar database
-    architecture
-
-    Args:
-        data (np.ndarray): Dataset to ingest
-
-    Returns:
-        tuple: A 2-element tuple containing:
-            - df (pd.DataFrame): In-memory dataframe for vectorized querying.
-            - file_size (int): Physical byte size of the Snappy-compressed .parquet file.
+    Initializes a Pandas dataframe and exports it to Parquet to simulate columnar architecture.
     """
     parq_file = "benchmark.parquet"
     if os.path.exists(parq_file):
@@ -176,19 +142,19 @@ if __name__ == "__main__":
     # 1. Data generation
     TOTAL_RECORDS = 500000
     raw_data = generate_synth_data(TOTAL_RECORDS)
-    print_step("Setup", f"Generating {TOTAL_RECORDS:,} synthetic records...")
 
-    print_step("System", "Booting and loading data...")
+    print_step("System", "Booting engines and loading data to disk...")
     sql_conn, sql_cursor, sql_size = init_sqlite(raw_data)
     pd_df, pd_size = init_pandas(raw_data)
     fse_db, fse_size = init_fse(raw_data)
 
-    # Queries
+    # 2. Query Definitions
     QUERIES = [
         {
             "name": "Q1: Exact Filter (Reg=2, Age>40)",
             "sql": "SELECT AVG(spend) FROM sales WHERE region = 2 AND age > 40",
             "pd": lambda df: df.loc[(df['region'] == 2) & (df['age'] > 40), 'spend'].mean(),
+            "pq_filter": lambda stats: (2 >= stats[0]['min'] and 2 <= stats[0]['max']) and (40 <= stats[1]['max']),
             "partition_filter": lambda p_val: p_val == 2, 
             "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][1] > 40,
             "fse_leaf": lambda r: r[1] > 40,
@@ -198,6 +164,7 @@ if __name__ == "__main__":
             "name": "Q2: Exact Boundary (Spend 145 to 160)",
             "sql": "SELECT COUNT(*) FROM sales WHERE spend BETWEEN 145 AND 160",
             "pd": lambda df: len(df.loc[(df['spend'] >= 145) & (df['spend'] <= 160)]),
+            "pq_filter": lambda stats: not (160 < stats[2]['min'] or 145 > stats[2]['max']),
             "partition_filter": lambda p_val: True,
             "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][2] >= 145 and b.exact_bounding_region['min_bounds'][2] <= 160,
             "fse_leaf": lambda r: 145 <= r[2] <= 160,
@@ -207,6 +174,7 @@ if __name__ == "__main__":
             "name": "Q3: Aggregate Max (Max Spend Reg=3)",
             "sql": "SELECT MAX(spend) FROM sales WHERE region = 3",
             "pd": lambda df: df.loc[df['region'] == 3, 'spend'].max(),
+            "pq_filter": lambda stats: (3 >= stats[0]['min'] and 3 <= stats[0]['max']),
             "partition_filter": lambda p_val: p_val == 3,
             "fse_branch": lambda b: True, 
             "fse_leaf": lambda r: True,
@@ -216,6 +184,7 @@ if __name__ == "__main__":
             "name": "Q4: Honest Worst-Case (Age > 10)",
             "sql": "SELECT SUM(spend) FROM sales WHERE age > 10",
             "pd": lambda df: df.loc[df['age'] > 10, 'spend'].sum(),
+            "pq_filter": lambda stats: stats[1]['max'] > 10,
             "partition_filter": lambda p_val: True,
             "fse_branch": lambda b: b.exact_bounding_region['max_bounds'][1] > 10,
             "fse_leaf": lambda r: r[1] > 10,
@@ -225,21 +194,39 @@ if __name__ == "__main__":
 
     print_step("System", "Executing Queries")
     query_results = []
+    
+    # Load physical Parquet metadata to evaluate Zone Map pruning capability
+    pq_file = pq.ParquetFile("benchmark.parquet")
 
     for q in QUERIES:
-        # 1. SQLite Baseline
+        # SQLite Baseline (No index = 100% table scan)
         sql_cursor.execute(q['sql'])
         sql_res = sql_cursor.fetchone()[0]
         sql_res = sql_res if sql_res is not None else 0.0
+        sqlite_touched = TOTAL_RECORDS 
 
-        # 2. Pandas Baseline
+        # Parquet (Native 1D Zone Map Pruning)
+        parquet_touched = 0
+        for rg_idx in range(pq_file.num_row_groups):
+            rg = pq_file.metadata.row_group(rg_idx)
+            
+            # Extract Parquet's 1D Min/Max stats [0: Region, 1: Age, 2: Spend]
+            stats = {
+                0: {'min': rg.column(0).statistics.min, 'max': rg.column(0).statistics.max},
+                1: {'min': rg.column(1).statistics.min, 'max': rg.column(1).statistics.max},
+                2: {'min': rg.column(2).statistics.min, 'max': rg.column(2).statistics.max}
+            }
+            
+            # If the Row Group boundaries overlap the query, Parquet MUST touch these rows
+            if q['pq_filter'](stats):
+                parquet_touched += rg.num_rows
+
+        # Pandas execution strictly to grab the mathematical result baseline for validation
         pd_res = q['pd'](pd_df)
         pd_res = pd_res if not pd.isna(pd_res) else 0.0
 
-        baseline_rows = TOTAL_RECORDS # Both baseline engines evaluate 100% of rows
-
-        # 3. FSE Engine
-        fse_res, touched = fse_db.execute_query(
+        # FSE Engine (State-Isolation & Exact Bounding Regions)
+        fse_res, fse_touched = fse_db.execute_query(
             q['partition_filter'],
             q['fse_branch'],
             q['fse_leaf'],
@@ -248,11 +235,14 @@ if __name__ == "__main__":
 
         query_results.append({
             'name': q['name'], 
-            'baseline_rows': baseline_rows, 
-            'fse_rows': touched, 
-            'baseline_res': pd_res, # Using Pandas result as the exact mathematical baseline
+            'sqlite_rows': sqlite_touched,
+            'parquet_rows': parquet_touched, 
+            'fse_rows': fse_touched, 
+            'baseline_res': pd_res, 
             'fse_res': fse_res
         })
 
     sql_conn.close()
+    
+    # Send the raw data to the output formatter
     print_benchmark_report((sql_size, pd_size, fse_size), query_results)

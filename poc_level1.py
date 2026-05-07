@@ -1,13 +1,19 @@
-"""Proof of Concept for FSE Core Engine Level 1"""
+"""
+Proof of Concept for FSE Core Engine Level 1
+Chapter 8.1.A: Deterministic Precision and Pruning
+
+This module will validate the following:
+1. Tier 1 (Deterministic Partitioning): Achieving state-isolation. Eliminates cross-partition ambiguity.
+2. Tier 2 (Fractal Branching): Achieving exact ractal pruning.
+3. Tier 3 (Delta Encoding): Achieving lossless reconstruction.
+"""
 import numpy as np
 from fse.core import FSECore
 from helpers.outputs import print_section
 
 def run_level_1():
     """
-    Executes the Level 1 POC focusing on Tier 1 Categorical Walls.
-    Demonstrates 100% precision for structural queries by bypassing
-    unrelated partitions entirely.
+    Executes Level 1, focusing on Deterministic Precision.
     """
     print_section(" FSE MICRO PoC - LEVEL 1: DETERMINISTIC ISOLATION (TIER 1)")
 
@@ -20,21 +26,17 @@ def run_level_1():
     ])
     fse = FSECore(partition_col=0, n_sub_clusters=1)
 
-    # 6.1 Bootstrapping and Stabilization
     fse.bootstrap(raw_data)
 
-    # 5.5 Query Execution via Deterministic Pruning
-    # Tier 3 Filter: Age (Column 1) < 35
+    # Query: Age (Column 1) < 35
     res, touched = fse.execute_query(
-        # Tier 1: Allow all regions
+        # Tier 1: Allow all regions to evaluate state-isolation integrity.
         partition_filter=lambda p_val: True,
 
-        # 4.3 Theorem 2: Deterministic Query Pruning
-        # Engine evaluates the predicate against boundaries. Since West age = 45, the condition is
-        # met (45 > 35) and the branch is pruned.
+        # Tier 2: Evaluate the predicate against Exact Bounding Regions.
         branch_evaluator=lambda b: b.exact_bounding_region['max_bounds'][1] < 35,
 
-        # 4.2 Theorem 1: Exact Reconstruction
+        # Tier 3: Exact match for reconstructed Delta Vectors (Theorem 1).
         leaf_evaluator=lambda r: r[1] < 35,
 
         aggregator=np.mean
