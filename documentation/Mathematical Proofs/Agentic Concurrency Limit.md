@@ -1,5 +1,7 @@
 # Theorem 1: The Agentic Concurrency Limit (The KV Cache Bottleneck)
 
+The maximum number of concurrent agents a physical system can support scales inversely with the size of the agent’s memory context window. 
+
 **Definitions**
 
 - $V_{total}\in\mathbb{R}^+$ : The total system High-Bandwidht Memory (HBM) capacity.
@@ -32,3 +34,11 @@ $$U \le \frac{V_{dyn}}{C*N}$$
 6. Therefore, the theoretical maximum concurrency limit ($U_{max}$) is deifned as the floor of the upper bound:
 
 $$U_{max}=\lfloor\frac{V_{dyn}}{C*N}\rfloor$$
+
+7. Let $K = \frac{V_{dyn}}{C}$ be a fixed system capcity constant. Substituting $K$ demonstrates the bounding relationship:
+
+$$U_{max}=\frac{K}{C}$$
+
+**Conclusion**
+
+Since $U_{max} \propto \frac{1}{N}$, it is mathematically proven that scaling an agent’s memory ($N$) exponentially cannibalizes system concurrency. By $\lim_{N \to \infty} U_{max} = 0$, expanding context windows forces a zero-sum hardware crisis. For example, allocating a 100,000-token context history on a standard 70B parameter model ($C \approx 320 \text{ KB}$) consumes $\approx 32 \text{ GB}$ of dynamic VRAM per instance, requiring multiple $40,000 GPUs to support a mathematically trivial number of users.
