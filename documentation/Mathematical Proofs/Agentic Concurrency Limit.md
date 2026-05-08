@@ -1,4 +1,4 @@
-# Theorem 1: The Agentic Concurrency Limit (The KV Cache Bottleneck)
+# Theorem: The Agentic Concurrency Limit (The KV Cache Bottleneck)
 
 The maximum number of concurrent agents a physical system can support scales inversely with the size of the agent’s memory context window. 
 
